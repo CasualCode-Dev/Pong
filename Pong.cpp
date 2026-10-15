@@ -1,7 +1,8 @@
-#include "Bat.h"
 #include <sstream>
 #include <cstdlib>
 #include <SFML/Graphics.hpp>
+#include "Bat.h"
+#include "Ball.h"
 
 int main()
 {
@@ -13,8 +14,10 @@ int main()
 
 	Bat bat(1920 / 2, 1080 - 20);
 
+	Ball ball(1920 / 2, 0);
+
 	Text hud;
-	
+
 	Font font;
 	font.loadFromFile("fonts/DS-DIGIT.ttf");
 
@@ -24,11 +27,11 @@ int main()
 	hud.setPosition(20, 20);
 
 	Clock clock;
-	
+
 	while (window.isOpen())
 	{
 		Event event;
-		
+
 		while (window.pollEvent(event))
 		{
 			if (event.type == Event::Closed)
@@ -62,13 +65,44 @@ int main()
 
 		Time dt = clock.restart();
 		bat.update(dt);
+		ball.update(dt);
 		std::stringstream ss;
 		ss << "Score: " << score << "    Lives: " << lives;
 		hud.setString(ss.str());
 
+		if (ball.getPosition().top > window.getSize().y)
+		{
+			ball.reboundBottom();
+			
+			lives--;
+			if (lives < 1)
+			{
+				score = 0;
+				lives = 3;
+			}
+		}
+
+		if (ball.getPosition().top < 0)
+		{
+			ball.reboundBatOrTop();
+			score++;
+		}
+
+		if (ball.getPosition().left < 0 ||
+			ball.getPosition().left + ball.getPosition().width > window.getSize().x)
+		{
+			ball.reboundSides();
+		}
+
+		if (ball.getPosition().intersects(bat.getPosition()))
+		{
+			ball.reboundBatOrTop();
+		}
+
 		window.clear();
 		window.draw(hud);
 		window.draw(bat.getShape());
+		window.draw(ball.getShape());
 		window.display();
 	}
 
